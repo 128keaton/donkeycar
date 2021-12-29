@@ -1,4 +1,3 @@
-
 from typing import (Any, Callable, Generic, Iterable, Iterator, List, Sized, Tuple, TypeVar)
 
 from donkeycar.pipeline.types import TubRecord
@@ -22,6 +21,7 @@ class SizedIterator(Generic[X], Iterator[X], Sized):
 
 class TubSeqIterator(SizedIterator[TubRecord]):
     def __init__(self, records: List[TubRecord]) -> None:
+        super().__init__()
         self.records = records or list()
         self.current_index = 0
 
@@ -42,12 +42,11 @@ class TubSeqIterator(SizedIterator[TubRecord]):
     next = __next__
 
 
-class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
-    def __init__(self,
-                 iterable: Iterable[R],
-                 x_transform: Callable[[R], XOut],
+
+class TfmIterator(SizedIterator[Tuple[XOut, YOut]]):
+    def __init__(self, iterable: Iterable[R], x_transform: Callable[[R], XOut],
                  y_transform: Callable[[R], YOut]) -> None:
-
+        super().__init__()
         self.iterable = iterable
         self.x_transform = x_transform
         self.y_transform = y_transform
@@ -65,12 +64,10 @@ class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
         return next(self.iterator)
 
 
-class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
-    def __init__(self,
-                 iterable: Iterable[Tuple[X, Y]],
-                 x_transform: Callable[[X], XOut],
+class TfmTupleIterator(SizedIterator[Tuple[XOut, YOut]]):
+    def __init__(self, iterable: Iterable[Tuple[X, Y]], x_transform: Callable[[X], XOut],
                  y_transform: Callable[[Y], YOut]) -> None:
-
+        super().__init__()
         self.iterable = iterable
         self.x_transform = x_transform
         self.y_transform = y_transform
@@ -88,18 +85,16 @@ class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOu
         return next(self.iterator)
 
 
-class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
-    '''
+class BaseTfmIterator_(SizedIterator[Tuple[XOut, YOut]]):
+    """
     A basic transforming iterator.
     Do no use this class directly.
-    '''
+    """
 
-    def __init__(self,
-                 # Losing a bit of type safety here for a common implementation
-                 iterable: Iterable[Any],
-                 x_transform: Callable[[R], XOut],
+    def __init__(self, iterable: Iterable[Any], x_transform: Callable[[R], XOut],
                  y_transform: Callable[[R], YOut]) -> None:
 
+        super().__init__()
         self.iterable = iterable
         self.x_transform = x_transform
         self.y_transform = y_transform
@@ -113,7 +108,7 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
 
     def __next__(self):
         record = next(self.iterator)
-        if (isinstance(record, tuple) and len(record) == 2):
+        if isinstance(record, tuple) and len(record) == 2:
             x, y = record
             return self.x_transform(x), self.y_transform(y)
         else:
@@ -150,6 +145,5 @@ class TubSequence(Iterable[TubRecord]):
             x_transform: Callable[[X], XOut],
             y_transform: Callable[[Y], YOut],
             factory: Callable[[], SizedIterator[Tuple[X, Y]]]) -> SizedIterator[Tuple[XOut, YOut]]:
-
         pipeline = factory()
         return cls.map_pipeline(pipeline=pipeline, x_transform=x_transform, y_transform=y_transform)
